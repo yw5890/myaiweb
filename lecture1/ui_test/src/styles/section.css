@@ -1,0 +1,9 @@
+/* 섹션 공통 스타일 */
+.section-wrapper {
+  width: 100%;
+  margin-bottom: 64px;
+}
+
+.section-wrapper:last-child {
+  margin-bottom: 0;
+}

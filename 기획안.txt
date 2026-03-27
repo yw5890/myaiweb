@@ -1,0 +1,145 @@
+커뮤니티 사이트 
+1.모니터 정보 커뮤니티 사이트 (영어로(임시로 만들어줘))
+
+2.디자인 스타일/컨셉:
+컬러팔레트-https://huemint.com/website-monochrome/#palette=050505-ffffff
+참고
+
+3.특별한 기능 아이디어
+-좋아요 기능
+
+
+
+4. 페이지 구성
+	1)게시물 목록 페이지
+		-네비게이션바
+			-로고(좌측)
+			-언어 변경아이콘(우측)
+			-프로필 아이콘(최우측)(로그인이 안되어있으면 login 아이콘으로)
+				-'닉네임'님 환영합니다
+		-메인 콘텐츠 영역
+			-게시판 이름 / 글쓰기 버튼 (게시물 작성 버튼)
+			-게시물 목록
+				(한 페이지에 20개 표시) 
+				(클릭하면 게시물 페이지로 이동)
+				-썸네일
+				-게시물 제목
+				-작성자 닉네임
+				-작성시간
+				-조회수
+				-댓글수
+			-페이지네이션(현재 페이지와 좌우 버튼)
+	
+	2)게시물 페이지
+			-게시물 제목/'목록으로' 버튼
+			-게시물 본문
+			-작성 시간/작성자/댓글수/좋아요수(메타데이터)
+			-좋아요 표시 버튼
+			-댓글영역
+				-댓글 작성란
+					-댓글 입력란
+					-등록버튼
+				-댓글 목록란
+					-댓글 내용
+					-작성자
+					-작성 시간
+
+	3)게시물 작성 페이지
+			-제목 입력란
+			-본문 입력란
+			-'등록' 버튼
+			-뒤로가기 버튼
+
+	4)로그인 페이지(목적)
+		-뒤로가기 버튼
+		-로고(상단 중앙 배치)
+		-로그인 텍스트
+		-아이디(이메일) 입력란
+		-비밀번호 입력란
+		-로그인 버튼(오른쪽 배치)
+		-간편로그인 버튼 (4종류)
+		-회원가입버튼
+
+	5)회원가입페이지
+		-뒤로가기 버튼
+		-아이디 입력란
+		-비밀번호 입력란
+		-전화번호 입력란
+		-회원가입 버튼
+
+
+
+
+UXUI디자이너
+-와이어프레임(layout,IA,userflow)
+-디자인시스템
+
+유저 플로우를 추론하기 위해
+유저의 행동 정의
+
+테이블을 만들어둠.
+
+CRUD
+- create: 데이터 추가하기 (회원가입/게시물작성/댓글작성)
+- read: 데이터 읽기 (조회하기->게시물 목록 가져오기, 게시물 내용 가져오기)
+- update: 데이터 수정하기(닉네임변경, 게시물 내용 수정, 댓글 수정)
+- delete: 데이터 제거하기 (게시물삭제, 댓글 삭제, 회원탈퇴)
+
+
+-------------------------------------------------------------------
+5. 데이터베이스 테이블 설계
+-------------------------------------------------------------------
+
+[1] users (회원 테이블)
+  - id          : UUID        PK  고유 식별자
+  - email       : VARCHAR         아이디(이메일)
+  - password    : VARCHAR         비밀번호 (암호화)
+  - nickname    : VARCHAR         닉네임
+  - phone       : VARCHAR         전화번호
+  - created_at  : TIMESTAMP       가입일
+  ※ 소셜 로그인 지원 시 provider, provider_id 컬럼 추가 필요
+
+[2] posts (게시물 테이블)
+  - id           : UUID        PK  고유 식별자
+  - user_id      : UUID        FK  작성자 (users.id 참조)
+  - title        : VARCHAR         게시물 제목
+  - content      : TEXT            게시물 본문
+  - thumbnail_url: VARCHAR         썸네일 이미지 URL
+  - view_count   : INTEGER         조회수
+  - created_at   : TIMESTAMP       작성 시간
+  - updated_at   : TIMESTAMP       수정 시간
+
+[3] comments (댓글 테이블)
+  - id         : UUID        PK  고유 식별자
+  - post_id    : UUID        FK  게시물 (posts.id 참조)
+  - user_id    : UUID        FK  작성자 (users.id 참조)
+  - content    : TEXT            댓글 내용
+  - created_at : TIMESTAMP       작성 시간
+  - updated_at : TIMESTAMP       수정 시간
+
+[4] likes (좋아요 테이블)
+  - id         : UUID        PK  고유 식별자
+  - post_id    : UUID        FK  게시물 (posts.id 참조)
+  - user_id    : UUID        FK  좋아요 누른 유저 (users.id 참조)
+  - created_at : TIMESTAMP       좋아요 누른 시간
+  ※ (post_id + user_id) UNIQUE 제약 → 중복 좋아요 방지
+
+테이블 관계:
+  users ──┬── posts    (1:N)
+          ├── comments (1:N)
+          └── likes    (1:N)
+  posts  ──┬── comments (1:N)
+            └── likes    (1:N)
+
+CRUD 매핑:
+  회원가입          → users    CREATE
+  닉네임 변경       → users    UPDATE
+  회원탈퇴          → users    DELETE
+  게시물 목록/상세  → posts    READ
+  게시물 작성       → posts    CREATE
+  게시물 수정/삭제  → posts    UPDATE / DELETE
+  댓글 작성         → comments CREATE
+  댓글 수정/삭제    → comments UPDATE / DELETE
+  좋아요 누르기     → likes    CREATE
+  좋아요 취소       → likes    DELETE
+

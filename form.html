@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문의 폼</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .card h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+
+    .card p.subtitle {
+      font-size: 0.95rem;
+      color: #718096;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 6px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #2d3748;
+      background: #f7fafc;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+
+    button[type="submit"]:hover {
+      opacity: 0.92;
+    }
+
+    button[type="submit"]:active {
+      transform: scale(0.98);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .toast {
+      display: none;
+      margin-top: 20px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .toast.success {
+      background: #c6f6d5;
+      color: #276749;
+      display: block;
+    }
+
+    .toast.error {
+      background: #fed7d7;
+      color: #9b2335;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>문의하기</h1>
+    <p class="subtitle">아래 양식을 작성하시면 Supabase에 저장됩니다.</p>
+
+    <form id="contactForm">
+      <div class="form-group">
+        <label for="name">이름 *</label>
+        <input type="text" id="name" placeholder="홍길동" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">이메일 *</label>
+        <input type="email" id="email" placeholder="example@email.com" required />
+      </div>
+
+      <div class="form-group">
+        <label for="subject">제목 *</label>
+        <input type="text" id="subject" placeholder="문의 제목을 입력하세요" required />
+      </div>
+
+      <div class="form-group">
+        <label for="message">내용 *</label>
+        <textarea id="message" placeholder="문의 내용을 자세히 작성해 주세요..." required></textarea>
+      </div>
+
+      <button type="submit" id="submitBtn">제출하기</button>
+    </form>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vqmvhyuzxhjpuimkfcuq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxbXZoeXV6eGhqcHVpbWtmY3VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzgxMjQsImV4cCI6MjA5MDE1NDEyNH0.Dteit_XyZN3jgbkj5Q9zm-2kmSlH-5PN_Dqu25ZgV78';
+
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const toast = document.getElementById('toast');
+
+    function showToast(message, type) {
+      toast.textContent = message;
+      toast.className = 'toast ' + type;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 4000);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const subject = document.getElementById('subject').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '저장 중...';
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/form`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+
+        if (response.ok) {
+          showToast('✅ 제출이 완료됐습니다! Supabase에 저장되었어요.', 'success');
+          form.reset();
+        } else {
+          const err = await response.json();
+          showToast('❌ 오류가 발생했습니다: ' + (err.message || response.status), 'error');
+        }
+      } catch (err) {
+        showToast('❌ 네트워크 오류: ' + err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '제출하기';
+      }
+    });
+  </script>
+</body>
+</html>
